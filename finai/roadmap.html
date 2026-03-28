@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FinAI Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+:root {
+  --bg-dark:#0b0f1a;
+  --text-main:#ffffff;
+  --text-muted:#9aa4c7;
+  --primary:#6cf2c2;
+  --secondary:#7c83ff;
+  --danger:#ff4d4d;
+}
+
+body {
+  margin:0;
+  font-family: 'Segoe UI', sans-serif;
+  background: radial-gradient(circle at top, #060429, #0b0f1a);
+  color: var(--text-main);
+}
+
+header {
+  display:flex;
+  justify-content:space-between;
+  padding:20px 60px;
+  backdrop-filter: blur(10px);
+}
+
+.logo {
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  background: linear-gradient(
+    90deg,
+    #0ae7bb,
+    #6a7cff,
+    #ff04fb
+  );
+  background-size: 200% auto;
+  animation: logoFlow 4s linear infinite;
+
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+/* FORM */
+.container {
+  max-width:1200px;
+  margin:auto;
+  padding:20px;
+}
+
+.form-card {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(20px);
+  padding:20px;
+  border-radius:16px;
+  margin-bottom:20px;
+}
+
+input {
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+  border-radius:8px;
+  border:none;
+  background:#1a1f35;
+  color:white;
+}
+
+button {
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  background:linear-gradient(90deg,#0ae7bb,#6a7cff);
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button:hover {
+  transform:scale(1.02);
+}
+
+/* DASHBOARD */
+#alerts .card {
+  margin-bottom:15px;
+  font-weight:bold;
+  font-size:14px;
+}
+
+.grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+  gap:15px;
+  margin-top:20px;
+}
+
+.card {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(20px);
+  padding:15px;
+  border-radius:12px;
+  transition: 0.3s;
+  text-align:center;
+}
+
+.card h3 {
+  color: var(--primary);
+  font-size:16px;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+}
+
+/* CHARTS */
+.chart-row {
+  display:flex;
+  flex-wrap:wrap;
+  gap:20px;
+  justify-content:center;
+  margin-top:20px;
+}
+
+.chart-row canvas {
+  flex:1 1 300px;
+  max-width:300px;
+  max-height:300px;
+}
+
+#lineChart {
+  max-width:90%;
+  max-height:300px;
+  margin:30px auto 0 auto;
+  display:block;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">FinAI</div>
+</header>
+
+<div class="container">
+
+<div class="form-card">
+<h2>AI Financial Planner</h2>
+
+<input type="number" id="age" placeholder="Age">
+<input type="number" id="income" placeholder="Monthly Income">
+<input type="number" id="expenses" placeholder="Monthly Expenses">
+<input type="number" id="goal" placeholder="Goal Amount (₹)">
+<input type="number" id="years" placeholder="Years to achieve goal">
+
+<h3>Daily Expenses (₹)</h3>
+<input type="number" id="food" placeholder="Food">
+<input type="number" id="shopping" placeholder="Shopping">
+<input type="number" id="travel" placeholder="Travel">
+<input type="number" id="bills" placeholder="Bills">
+
+<button onclick="generate()">Generate Dashboard</button>
+
+<p id="error" class="alert"></p>
+</div>
+
+<div id="alerts"></div>
+<div id="dashboard"></div>
+
+<div class="chart-row">
+  <canvas id="pieChart"></canvas>
+  <canvas id="barChart"></canvas>
+  <canvas id="dailyPieChart"></canvas>
+</div>
+
+<canvas id="lineChart"></canvas>
+
+</div>
+
+<script>
+let pie, bar, line, dailyPie;
+
+function getVal(id){ return parseFloat(document.getElementById(id).value) || 0; }
+
+function generate(){
+let age = getVal("age");
+let income = getVal("income");
+let expenses = getVal("expenses");
+let goal = getVal("goal");
+let years = getVal("years");
+
+let food = getVal("food");
+let shopping = getVal("shopping");
+let travel = getVal("travel");
+let bills = getVal("bills");
+
+// VALIDATION
+if(!age || !income || !expenses || !goal || !years){
+  document.getElementById("error").innerText="⚠ Please fill all details first!";
+  return;
+}
+document.getElementById("error").innerText="";
+
+// CALCULATIONS
+let savings = income - expenses;
+let rate = (savings/income)*100;
+let health = rate>30?"Excellent ✅":rate>10?"Moderate ⚠":"Risky ❌";
+let emergency = expenses*6;
+let r=0.01, n=years*12;
+let sip = (goal*r)/(Math.pow(1+r,n)-1);
+
+// AI INSIGHTS
+let ai = "";
+if(rate<20) ai+="Reduce expenses.<br>";
+if(age<30) ai+="Invest aggressively.<br>";
+if(savings<0) ai+="Overspending detected!<br>";
+
+// DYNAMIC RISK ALERTS
+let alertsDiv = document.getElementById("alerts");
+alertsDiv.innerHTML="";
+if(expenses/income > 0.8){
+  alertsDiv.innerHTML+=`<div class="card" style="background:#ff4d4d; color:white;">
+  ⚠ High Expenses: You are spending more than 80% of your income!</div>`;
+}
+if(savings < 0){
+  alertsDiv.innerHTML+=`<div class="card" style="background:#ff704d; color:white;">
+  ❌ Overspending Detected: Negative savings!</div>`;
+}
+
+// DAILY SPENDING
+let categories = {Food:food, Shopping:shopping, Travel:travel, Bills:bills};
+let totalDaily = food+shopping+travel+bills;
+let maxCat = Object.keys(categories).reduce((a,b)=>categories[a]>categories[b]?a:b);
+let dailyInsight = `Total spent today: ₹${totalDaily}<br>Highest spending: ${maxCat} ₹${categories[maxCat]} ${categories[maxCat]>income*0.3?"⚠ Overspent!":""}`;
+
+// DASHBOARD
+document.getElementById("dashboard").innerHTML=`
+<div class="grid">
+<div class="card"><h3>💰 Savings</h3><p>₹${savings}</p><p>${health}</p></div>
+<div class="card"><h3>🚨 Emergency</h3><p>₹${emergency}</p></div>
+<div class="card"><h3>🎯 SIP</h3><p>₹${sip.toFixed(0)}</p></div>
+<div class="card"><h3>🤖 AI</h3><p>${ai}</p></div>
+<div class="card"><h3>💡 Daily Spending</h3><p>${dailyInsight}</p></div>
+</div>`;
+
+// DESTROY OLD CHARTS
+if(pie) pie.destroy();
+if(bar) bar.destroy();
+if(line) line.destroy();
+if(dailyPie) dailyPie.destroy();
+
+// PIE CHART
+pie = new Chart(document.getElementById("pieChart"), {
+  type: "pie",
+  data: {
+    labels: ["Expenses", "Investment", "Savings"],
+    datasets: [{data: [expenses, savings*0.7, savings*0.3], backgroundColor: ["#ff6384","#36a2eb","#6cf2c2"]}]
+  },
+  options:{responsive:true, plugins:{tooltip:{enabled:true},legend:{position:"bottom"}}, animation:{duration:1200, easing:"easeOutBounce"}}
+});
+
+// BAR CHART
+bar = new Chart(document.getElementById("barChart"), {
+  type: "bar",
+  data: {labels:["Income","Expenses","Savings"], datasets:[{label:"Overview", data:[income,expenses,savings], backgroundColor:["#6cf2c2","#ff6384","#36a2eb"]}]},
+  options:{responsive:true, plugins:{tooltip:{enabled:true},legend:{display:false}}, animation:{duration:1200, easing:"easeOutQuart"}}
+});
+
+// LINE CHART
+let months=[], growth=[], total=0;
+for(let i=1;i<=years*12;i++){ total+=sip; months.push(i); growth.push(Math.round(total)); }
+
+line = new Chart(document.getElementById("lineChart"), {
+  type:"line",
+  data:{labels:months,datasets:[{label:"Investment Growth", data:growth, fill:true, tension:0.3, borderColor:"#6cf2c2", backgroundColor:"rgba(108,242,194,0.2)", pointRadius:3}]},
+  options:{responsive:true, plugins:{tooltip:{enabled:true},legend:{position:"top"}}, animation:{duration:1500, easing:"easeOutQuart"}}
+});
+
+// DAILY PIE CHART
+dailyPie = new Chart(document.getElementById("dailyPieChart"),{
+  type:"doughnut",
+  data:{labels:Object.keys(categories), datasets:[{data:Object.values(categories), backgroundColor:["#ff6384","#36a2eb","#6cf2c2","#ff9f40"]}]},
+  options:{plugins:{tooltip:{enabled:true,callbacks:{label:ctx=>`${ctx.label}: ₹${ctx.raw}`}},legend:{position:"bottom"}}, animation:{duration:1200, easing:"easeOutBounce"}}
+});
+
+}
+</script>
+
+</body>
+</html>
